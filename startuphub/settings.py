@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'ideas',
     'matching',
     'rooms',
+    'direct_messages',
 ]
 
 MIDDLEWARE = [

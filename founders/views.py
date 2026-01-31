@@ -77,10 +77,10 @@ class FounderProfileViewSet(viewsets.ModelViewSet):
                 {'error': 'Profile not found. Please complete your profile.'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        except AttributeError:
+        except FounderProfile.DoesNotExist:
             return Response(
-                {'error': 'User not authenticated'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {'error': 'Profile not found. Please complete your profile.'},
+                status=status.HTTP_404_NOT_FOUND
             )
     
     @action(detail=False, methods=['patch', 'put'])
@@ -182,7 +182,15 @@ class ConnectionViewSet(viewsets.ModelViewSet):
                 )
             
             # Don't allow self-connection
-            if int(to_founder_id) == from_founder.id:
+            try:
+                to_founder_id_int = int(to_founder_id)
+            except (ValueError, TypeError):
+                return Response(
+                    {'error': 'Invalid to_founder ID'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if to_founder_id_int == from_founder.id:
                 return Response(
                     {'error': 'Cannot connect with yourself'},
                     status=status.HTTP_400_BAD_REQUEST

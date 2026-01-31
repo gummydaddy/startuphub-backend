@@ -14,6 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+# startuphub/urls.py
+
 from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
@@ -25,6 +27,7 @@ from founders.views import FounderProfileViewSet, ConnectionViewSet
 from ideas.views import IdeaViewSet
 from matching.views import MatchingViewSet
 from rooms.views import CoWorkingRoomViewSet, ProgressUpdateViewSet
+from direct_messages.views import DirectMessageViewSet  # ← UPDATED IMPORT
 
 
 def redirect_to_frontend(request):
@@ -48,6 +51,7 @@ def api_root(request):
                 'ideas': '/api/ideas/',
                 'matching': '/api/matching/',
                 'rooms': '/api/rooms/',
+                'messages': '/api/messages/',
                 'progress': '/api/progress/',
             },
         }
@@ -60,18 +64,17 @@ router.register(r'connections', ConnectionViewSet, basename='connection')
 router.register(r'ideas', IdeaViewSet, basename='idea')
 router.register(r'matching', MatchingViewSet, basename='matching')
 router.register(r'rooms', CoWorkingRoomViewSet, basename='room')
+router.register(r'messages', DirectMessageViewSet, basename='message')  # ← UPDATED
 router.register(r'progress', ProgressUpdateViewSet, basename='progress')
 
 urlpatterns = [
     path('', redirect_to_frontend, name='home'),
     path('admin/', admin.site.urls),
     
-    # API
     path('api/', api_root, name='api_root'),
     path('api/', include(router.urls)),
     
-    # Authentication
-    path('api/auth/', include('accounts.urls')),  # ← Add this
+    path('api/auth/', include('accounts.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

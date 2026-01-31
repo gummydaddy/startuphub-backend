@@ -1,33 +1,25 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from .models import CoWorkingRoom, RoomMembership, RoomMessage
 
 
 class CoWorkingRoomViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     
-    def get_permissions(self):
-        """Allow viewing rooms and messages without strict auth"""
-        if self.action in ['list', 'messages']:
-            return [AllowAny()]
-        return [IsAuthenticated()]
-    
     def list(self, request):
-        """List all active rooms"""
+        """List all active rooms with accurate member counts"""
         try:
             rooms = CoWorkingRoom.objects.filter(is_active=True)
             
             rooms_data = []
             for room in rooms:
-                try:
-                    member_count = RoomMembership.objects.filter(
-                        room=room, 
-                        is_active=True
-                    ).count()
-                except:
-                    member_count = 0
+                # Count ACTIVE members in the room
+                member_count = RoomMembership.objects.filter(
+                    room=room,
+                    is_active=True
+                ).count()
                 
                 rooms_data.append({
                     'id': room.id,
@@ -36,7 +28,7 @@ class CoWorkingRoomViewSet(viewsets.ViewSet):
                     'description': room.description,
                     'is_active': room.is_active,
                     'max_members': room.max_members,
-                    'member_count': member_count,
+                    'member_count': member_count,  # This is now accurate
                 })
             
             return Response(rooms_data)
@@ -45,6 +37,48 @@ class CoWorkingRoomViewSet(viewsets.ViewSet):
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'])
+    def join(self, request, pk=None):
+        """Join a co-working room"""
+        try:
+            room = CoWorkingRoom.objects.get(pk=pk)
+            
+            try:
+                founder = request.user.founder_profile
+            except AttributeError:
+                return Response(
+                    {'error': 'Please create your founder profile first'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create or activate membership
+            membership, created = RoomMembership.objects.get_or_create(
+                room=room,
+                founder=founder,
+                defaults={'is_active': True}
+            )
+            
+            if not created and not membership.is_active:
+                membership.is_active = True
+                membership.save()
+            
+            return Response({
+                'status': 'joined',
+                'room_id': room.id,
+                'room_name': room.name
+            })
+        
+        except CoWorkingRoom.DoesNotExist:
+            return Response(
+                {'error': 'Room not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
             )
     
     @action(detail=True, methods=['get'])
@@ -62,9 +96,10 @@ class CoWorkingRoomViewSet(viewsets.ViewSet):
                 },
                 'content': msg.content,
                 'created_at': msg.created_at.isoformat()
-            } for msg in reversed(list(messages))]
+            } for msg in reversed(list(messages))]  # Reverse to show oldest first
             
             return Response(messages_data)
+        
         except CoWorkingRoom.DoesNotExist:
             return Response(
                 {'error': 'Room not found'},
@@ -78,34 +113,49 @@ class CoWorkingRoomViewSet(viewsets.ViewSet):
     
     @action(detail=True, methods=['post'])
     def send_message(self, request, pk=None):
-        """Send a message to a room"""
+        """Send a message to a room - WITH DETAILED ERROR LOGGING"""
+        import traceback
+        
         try:
+            print(f"\n=== SEND MESSAGE DEBUG ===")
+            print(f"Room ID: {pk}")
+            print(f"User: {request.user}")
+            print(f"Request data: {request.data}")
+            
             room = CoWorkingRoom.objects.get(pk=pk)
+            print(f"Room found: {room.name}")
             
             # Check if user has founder profile
             try:
                 founder = request.user.founder_profile
-            except AttributeError:
+                print(f"Founder: {founder.name}")
+            except AttributeError as e:
+                print(f"No founder profile: {e}")
                 return Response(
                     {'error': 'Please create your founder profile first'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
             content = request.data.get('content')
+            print(f"Content: {content}")
             
             if not content or not content.strip():
+                print("Content is empty!")
                 return Response(
-                    {'error': 'Content is required'},
+                    {'error': 'Message content is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
+            # Create message
+            print("Creating message...")
             message = RoomMessage.objects.create(
                 room=room,
                 sender=founder,
                 content=content.strip()
             )
+            print(f"Message created with ID: {message.id}")
             
-            return Response({
+            response_data = {
                 'id': message.id,
                 'sender': {
                     'id': founder.id,
@@ -113,59 +163,24 @@ class CoWorkingRoomViewSet(viewsets.ViewSet):
                 },
                 'content': message.content,
                 'created_at': message.created_at.isoformat()
-            }, status=status.HTTP_201_CREATED)
+            }
+            print(f"Returning response: {response_data}")
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
         
         except CoWorkingRoom.DoesNotExist:
+            print(f"Room {pk} not found!")
             return Response(
                 {'error': 'Room not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
-            import traceback
-            print(f"Error sending message: {str(e)}")
-            print(traceback.format_exc())
+            print(f"ERROR: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
             return Response(
                 {'error': f'Failed to send message: {str(e)}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
-    @action(detail=True, methods=['post'])
-    def join(self, request, pk=None):
-        """Join a co-working room"""
-        try:
-            room = CoWorkingRoom.objects.get(pk=pk)
-            founder = request.user.founder_profile
-            
-            membership, created = RoomMembership.objects.get_or_create(
-                room=room,
-                founder=founder,
-                defaults={'is_active': True}
-            )
-            
-            if not created:
-                membership.is_active = True
-                membership.save()
-            
-            return Response({
-                'status': 'joined',
-                'room_id': room.id,
-                'room_name': room.name
-            })
-        except CoWorkingRoom.DoesNotExist:
-            return Response(
-                {'error': 'Room not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except AttributeError:
-            return Response(
-                {'error': 'Please create your founder profile first'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
 
 class ProgressUpdateViewSet(viewsets.ViewSet):
@@ -173,122 +188,3 @@ class ProgressUpdateViewSet(viewsets.ViewSet):
     
     def list(self, request):
         return Response([])
-    
-    def create(self, request):
-        return Response({'status': 'created'}, status=status.HTTP_201_CREATED)
-    
-
-'''
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import CoWorkingRoom, RoomMembership
-
-
-class CoWorkingRoomViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
-    
-    def list(self, request):
-        """List all active rooms"""
-        try:
-            rooms = CoWorkingRoom.objects.filter(is_active=True)
-            
-            rooms_data = []
-            for room in rooms:
-                # Manually count members
-                try:
-                    member_count = RoomMembership.objects.filter(
-                        room=room, 
-                        is_active=True
-                    ).count()
-                except:
-                    member_count = 0
-                
-                rooms_data.append({
-                    'id': room.id,
-                    'name': room.name,
-                    'emoji': room.emoji,
-                    'description': room.description,
-                    'is_active': room.is_active,
-                    'max_members': room.max_members,
-                    'member_count': member_count,
-                })
-            
-            return Response(rooms_data)
-        
-        except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
-    @action(detail=True, methods=['post'])
-    def join(self, request, pk=None):
-        """Join a co-working room"""
-        try:
-            room = CoWorkingRoom.objects.get(pk=pk)
-            founder = request.user.founder_profile
-            
-            membership, created = RoomMembership.objects.get_or_create(
-                room=room,
-                founder=founder,
-                defaults={'is_active': True}
-            )
-            
-            if not created:
-                membership.is_active = True
-                membership.save()
-            
-            return Response({
-                'status': 'joined',
-                'room_id': room.id,
-                'room_name': room.name
-            })
-        except CoWorkingRoom.DoesNotExist:
-            return Response(
-                {'error': 'Room not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
-    @action(detail=True, methods=['post'])
-    def leave(self, request, pk=None):
-        """Leave a co-working room"""
-        try:
-            room = CoWorkingRoom.objects.get(pk=pk)
-            founder = request.user.founder_profile
-            
-            membership = RoomMembership.objects.filter(
-                room=room,
-                founder=founder
-            ).first()
-            
-            if membership:
-                membership.is_active = False
-                membership.save()
-            
-            return Response({'status': 'left'})
-        except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class ProgressUpdateViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
-    
-    def list(self, request):
-        """List progress updates"""
-        return Response([])
-    
-    def create(self, request):
-        """Create progress update"""
-        return Response({'status': 'created'}, status=status.HTTP_201_CREATED)
-
-'''
