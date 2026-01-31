@@ -12,7 +12,7 @@ class FounderProfileSerializer(serializers.ModelSerializer):
             'current_goal', 'is_online', 'last_active', 'profile_image',
             'created_at'
         ]
-        read_only_fields = ['id', 'email', 'created_at', 'last_active']
+        read_only_fields = ['id', 'email', 'created_at', 'last_active', 'is_online']
 
 
 class FounderProfileCreateSerializer(serializers.ModelSerializer):
@@ -28,7 +28,7 @@ class FounderProfileCreateSerializer(serializers.ModelSerializer):
         validated_data['user'] = user
         return super().create(validated_data)
 
-
+'''
 class FounderConnectionSerializer(serializers.ModelSerializer):
     from_founder_details = FounderProfileSerializer(source='from_founder', read_only=True)
     to_founder_details = FounderProfileSerializer(source='to_founder', read_only=True)
@@ -38,3 +38,12 @@ class FounderConnectionSerializer(serializers.ModelSerializer):
         fields = ['id', 'from_founder', 'to_founder', 'from_founder_details', 
                   'to_founder_details', 'status', 'message', 'created_at']
         read_only_fields = ['id', 'created_at']
+'''
+
+class FounderConnectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FounderConnection
+        fields = ['id', 'from_founder', 'to_founder', 'status', 'message', 'created_at']
+        read_only_fields = ['id', 'created_at', 'status']
+
+        
