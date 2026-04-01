@@ -152,7 +152,6 @@ class IdeaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
 '''
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -303,5 +302,4 @@ class IdeaViewSet(viewsets.ModelViewSet):
         } for c in collaborations]
         
         return Response(data)
-
 '''

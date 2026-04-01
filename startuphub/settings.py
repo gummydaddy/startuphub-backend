@@ -15,7 +15,6 @@ from decouple import config
 from datetime import timedelta
 
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,11 +36,12 @@ DEBUG = True
 #DEBUG = config('DEBUG', default=False, cast=bool)
 
 #ALLOWED_HOSTS = ['*']
+#ALLOWED_HOSTS = ['*']
 
-ALLOWED_HOSTS = [                                                                                                                                                                                                                                                                                                    
-    'socyfie.pythonanywhere.com',                                                                                                                                                                                                                                                                                    
-    'localhost',                                                                                                                                                                                                                                                                                                     
-  ] 
+ALLOWED_HOSTS = [
+    'socyfie.pythonanywhere.com',
+    'localhost',
+]
 
 # Application definition
 
@@ -59,13 +59,13 @@ INSTALLED_APPS = [
     'corsheaders',
     'channels',
     #'sslserver',
-    
     # Local apps
     'accounts',
     'founders',
     'ideas',
     'matching',
     'rooms',
+    'direct_messages',
     'direct_messages',
 ]
 
@@ -91,6 +91,18 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 CORS_ALLOW_HEADERS = [
     'accept',
@@ -131,7 +143,6 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
