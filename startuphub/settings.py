@@ -66,7 +66,7 @@ INSTALLED_APPS = [
     'matching',
     'rooms',
     'direct_messages',
-    'direct_messages',
+    #'direct_messages',
 ]
 
 MIDDLEWARE = [
