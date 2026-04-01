@@ -29,6 +29,7 @@ from ideas.views import IdeaViewSet
 from matching.views import MatchingViewSet
 from rooms.views import CoWorkingRoomViewSet, ProgressUpdateViewSet
 from direct_messages.views import DirectMessageViewSet  # ← UPDATED IMPORT
+from direct_messages.views import DirectMessageViewSet  # ← UPDATED IMPORT
 
 
 def redirect_to_frontend(request):
@@ -53,6 +54,7 @@ def api_root(request):
                 'matching': '/api/matching/',
                 'rooms': '/api/rooms/',
                 'messages': '/api/messages/',
+                'messages': '/api/messages/',
                 'progress': '/api/progress/',
             },
         }
@@ -66,6 +68,7 @@ router.register(r'ideas', IdeaViewSet, basename='idea')
 router.register(r'matching', MatchingViewSet, basename='matching')
 router.register(r'rooms', CoWorkingRoomViewSet, basename='room')
 router.register(r'messages', DirectMessageViewSet, basename='message')  # ← UPDATED
+router.register(r'messages', DirectMessageViewSet, basename='message')  # ← UPDATED
 router.register(r'progress', ProgressUpdateViewSet, basename='progress')
 
 urlpatterns = [
@@ -75,6 +78,7 @@ urlpatterns = [
     path('api/', api_root, name='api_root'),
     path('api/', include(router.urls)),
     
+    path('api/auth/', include('accounts.urls')),
     path('api/auth/', include('accounts.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

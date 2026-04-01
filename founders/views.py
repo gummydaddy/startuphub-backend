@@ -5,7 +5,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
+from django.db.models import Q
 from .models import FounderProfile, FounderConnection
+from .serializers import FounderProfileSerializer
+
 from .serializers import FounderProfileSerializer
 
 
@@ -309,6 +312,8 @@ class ConnectionViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )

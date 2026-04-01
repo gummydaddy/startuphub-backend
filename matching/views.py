@@ -1,10 +1,8 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from .services import MatchingService
-from .models import RouletteSession, CofounderMatch
+from founders.models import FounderProfile
 from founders.serializers import FounderProfileSerializer
 
 
@@ -30,6 +28,7 @@ class MatchingViewSet(viewsets.ViewSet):
             if not all_founders.exists():
                 return Response(
                     {'error': 'No other founders available right now. Invite your friends!'},
+                    {'error': 'No other founders available right now. Invite your friends!'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -39,11 +38,13 @@ class MatchingViewSet(viewsets.ViewSet):
             serializer = FounderProfileSerializer(matched_founder)
             return Response({
                 'session_id': random.randint(1000, 9999),
+                'session_id': random.randint(1000, 9999),
                 'matched_founder': serializer.data
             })
 
         except Exception as e:
             return Response(
+                {'error': f'Matching failed: {str(e)}'},
                 {'error': f'Matching failed: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
