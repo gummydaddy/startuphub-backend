@@ -40,6 +40,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'socyfie.pythonanywhere.com',
+    'startuphub-backend-okae.onrender.com'
     'localhost',
 ]
 
