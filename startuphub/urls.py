@@ -68,7 +68,7 @@ router.register(r'ideas', IdeaViewSet, basename='idea')
 router.register(r'matching', MatchingViewSet, basename='matching')
 router.register(r'rooms', CoWorkingRoomViewSet, basename='room')
 router.register(r'messages', DirectMessageViewSet, basename='message')  # ← UPDATED
-router.register(r'messages', DirectMessageViewSet, basename='message')  # ← UPDATED
+#router.register(r'messages', DirectMessageViewSet, basename='message')  # ← UPDATED
 router.register(r'progress', ProgressUpdateViewSet, basename='progress')
 
 urlpatterns = [
