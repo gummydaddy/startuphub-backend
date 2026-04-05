@@ -7,7 +7,7 @@ from .models import CoWorkingRoom, RoomMembership, RoomMessage
 from .models import CoWorkingRoom, RoomMembership, RoomMessage
 
 
-class CoWorkingRoomViewSet(viewsets.ViewSet):
+#class CoWorkingRoomViewSet(viewsets.ViewSet):
 class CoWorkingRoomViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     
